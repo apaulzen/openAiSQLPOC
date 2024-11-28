@@ -35,25 +35,6 @@ enum category {{
   Footwear
 }}
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model address {{
-  id         Int       @id @default(autoincrement())
-  customerid Int?
-  firstname  String?
-  lastname   String?
-  address1   String?
-  address2   String?
-  city       String?
-  zip        String?
-  created    DateTime? @default(now()) @db.Timestamptz(6)
-  updated    DateTime? @db.Timestamptz(6)
-  order      order[]
-
-  @@index([customerid])
-  @@index([created])
-}}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model articles {{
   id                Int               @id @default(autoincrement())
   productid         Int?
@@ -90,15 +71,19 @@ model colors {{
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model customer {{
-  id               Int       @id(map: "customer_pkey1") @default(autoincrement())
-  firstname        String?
-  lastname         String?
-  gender           gender?
-  email            String?
-  dateofbirth      DateTime? @db.Date
-  currentaddressid Int?
-  created          DateTime? @default(now()) @db.Timestamptz(6)
-  updated          DateTime? @db.Timestamptz(6)
+  id          Int       @id(map: "customer_pkey1") @default(autoincrement())
+  firstname   String?
+  lastname    String?
+  gender      gender?
+  email       String?
+  dateofbirth DateTime? @db.Date
+  address1    String?
+  address2    String?
+  city        String?
+  zip         String?
+  order       order[]
+  created     DateTime? @default(now()) @db.Timestamptz(6)
+  updated     DateTime? @db.Timestamptz(6)
 
   @@index([email])
   @@index([dateofbirth])
@@ -109,18 +94,16 @@ model customer {{
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model order {{
-  id                Int               @id @default(autoincrement())
-  customer          Int?
-  ordertimestamp    DateTime?         @default(now()) @db.Timestamptz(6)
-  shippingaddressid Int?
-  total             Decimal?          @db.Money
-  shippingcost      Decimal?          @db.Money
-  created           DateTime?         @default(now()) @db.Timestamptz(6)
-  updated           DateTime?         @db.Timestamptz(6)
-  address           address?          @relation(fields: [shippingaddressid], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  order_positions   order_positions[]
+  id              Int               @id @default(autoincrement())
+  customerId      Int?
+  ordertimestamp  DateTime?         @default(now()) @db.Timestamptz(6)
+  total           Decimal?          @db.Money
+  shippingcost    Decimal?          @db.Money
+  created         DateTime?         @default(now()) @db.Timestamptz(6)
+  updated         DateTime?         @db.Timestamptz(6)
+  customer        customer?         @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_positions order_positions[]
 
-  @@index([customer])
   @@index([ordertimestamp])
   @@index([total])
 }}
@@ -137,11 +120,9 @@ model order_positions {{
   articles  articles? @relation(fields: [articleid], references: [id], onDelete: NoAction, onUpdate: NoAction)
   order     order?    @relation(fields: [orderid], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@index([orderid])
-  @@index([articleid])
   @@index([created])
-}}
-
+}
+}
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model sizes {{
   id       Int       @id @default(autoincrement())
@@ -169,6 +150,7 @@ model stock {{
   @@index([articleid])
   @@index([count])
 }}
+
 
 Follow these rules:
 1. Always use double quotes for column and table names.

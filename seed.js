@@ -15,27 +15,15 @@ async function seedDatabase() {
           lastname: faker.person.lastName(),
           gender: faker.helpers.arrayElement(["male", "female", "unisex"]),
           email: faker.internet.email(),
+          address1: faker.location.streetAddress(),
+          address2: faker.location.secondaryAddress(),
+          city: faker.location.city(),
+          zip: faker.location.zipCode(),
           dateofbirth: faker.date.past({ years: 30, refDate: new Date("2000-01-01") }),
         },
       });
     }
     console.log("Seeded `customer` table.");
-
-    // Seed `address`
-    for (let i = 0; i < 1000; i++) {
-      await prisma.address.create({
-        data: {
-          customerid: faker.number.int({ min: 1, max: 1000 }),
-          firstname: faker.person.firstName(),
-          lastname: faker.person.lastName(),
-          address1: faker.location.streetAddress(),
-          address2: faker.location.secondaryAddress(),
-          city: faker.location.city(),
-          zip: faker.location.zipCode(),
-        },
-      });
-    }
-    console.log("Seeded `address` table.");
 
     const colorIds = [];
     // Seed `colors`
@@ -73,8 +61,7 @@ async function seedDatabase() {
     for (let i = 0; i < 1000; i++) {
       await prisma.order.create({
         data: {
-          customer: faker.number.int({ min: 1, max: 1000 }),
-          shippingaddressid: faker.number.int({ min: 1, max: 1000 }),
+          customerId: faker.number.int({ min: 1, max: 1000 }),
           total: parseFloat(faker.commerce.price()),
           shippingcost: parseFloat(faker.commerce.price()),
         },
