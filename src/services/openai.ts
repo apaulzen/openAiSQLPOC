@@ -1,0 +1,192 @@
+import { ChatOpenAI, OpenAI } from "@langchain/openai";
+import { ChatPromptTemplate, PromptTemplate } from "@langchain/core/prompts";
+import * as dotenv from "dotenv";
+import { extractSQL } from "../util/extractSql";
+
+dotenv.config();
+
+// Initialize OpenAI API client
+const llm = new ChatOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  temperature: 1,
+  model: "gpt-4",
+});
+
+const prompt = ChatPromptTemplate.fromTemplate(`
+  You are a helpful assistant and an analyst with high proficiency with postgresql that converts natural language into SQL queries for an e-commerce database. 
+  The database schema includes:
+generator client {{
+  provider = "prisma-client-js"
+}}
+
+datasource db {{
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}}
+
+enum gender {{
+  male
+  female
+  unisex
+}}
+
+enum category {{
+  Apparel
+  Footwear
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model address {{
+  id         Int       @id @default(autoincrement())
+  customerid Int?
+  firstname  String?
+  lastname   String?
+  address1   String?
+  address2   String?
+  city       String?
+  zip        String?
+  created    DateTime? @default(now()) @db.Timestamptz(6)
+  updated    DateTime? @db.Timestamptz(6)
+  order      order[]
+
+  @@index([customerid])
+  @@index([created])
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model articles {{
+  id                Int               @id @default(autoincrement())
+  productid         Int?
+  ean               String?
+  colorid           Int?
+  size              Int?
+  description       String?
+  originalprice     Decimal?          @db.Money
+  reducedprice      Decimal?          @db.Money
+  taxrate           Decimal?          @db.Decimal
+  discountinpercent Int?
+  currentlyactive   Boolean?
+  created           DateTime?         @default(now()) @db.Timestamptz(6)
+  updated           DateTime?         @db.Timestamptz(6)
+  colors            colors?           @relation(fields: [colorid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_positions   order_positions[]
+  stock             stock[]
+
+  @@index([productid])
+  @@index([colorid])
+  @@index([size])
+  @@index([created])
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model colors {{
+  id       Int        @id @default(autoincrement())
+  name     String?
+  rgb      String?
+  articles articles[]
+
+  @@index([name])
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model customer {{
+  id               Int       @id(map: "customer_pkey1") @default(autoincrement())
+  firstname        String?
+  lastname         String?
+  gender           gender?
+  email            String?
+  dateofbirth      DateTime? @db.Date
+  currentaddressid Int?
+  created          DateTime? @default(now()) @db.Timestamptz(6)
+  updated          DateTime? @db.Timestamptz(6)
+
+  @@index([email])
+  @@index([dateofbirth])
+  @@index([created])
+  @@index([updated])
+  @@index([gender])
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order {{
+  id                Int               @id @default(autoincrement())
+  customer          Int?
+  ordertimestamp    DateTime?         @default(now()) @db.Timestamptz(6)
+  shippingaddressid Int?
+  total             Decimal?          @db.Money
+  shippingcost      Decimal?          @db.Money
+  created           DateTime?         @default(now()) @db.Timestamptz(6)
+  updated           DateTime?         @db.Timestamptz(6)
+  address           address?          @relation(fields: [shippingaddressid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_positions   order_positions[]
+
+  @@index([customer])
+  @@index([ordertimestamp])
+  @@index([total])
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_positions {{
+  id        Int       @id @default(autoincrement())
+  orderid   Int?
+  articleid Int?
+  amount    Int?      @db.SmallInt
+  price     Decimal?  @db.Money
+  created   DateTime? @default(now()) @db.Timestamptz(6)
+  updated   DateTime? @db.Timestamptz(6)
+  articles  articles? @relation(fields: [articleid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order     order?    @relation(fields: [orderid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([orderid])
+  @@index([articleid])
+  @@index([created])
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sizes {{
+  id       Int       @id @default(autoincrement())
+  gender   gender?
+  category category?
+  size     String?
+  size_us  Int?
+  size_uk  Int?
+  size_eu  Int?
+
+  @@index([size])
+  @@index([gender])
+  @@index([category])
+}}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stock {{
+  id        Int       @id @default(autoincrement())
+  articleid Int?
+  count     Int?
+  created   DateTime? @default(now()) @db.Timestamptz(6)
+  updated   DateTime? @db.Timestamptz(6)
+  articles  articles? @relation(fields: [articleid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([articleid])
+  @@index([count])
+}}
+
+Follow these rules:
+1. Always use double quotes for column and table names.
+2. Avoid using reserved SQL keywords unless properly escaped with double quotes.
+3. Use explicit type casting where necessary. For example:
+   - To compare a "money" column with a number, cast the "money" value to numeric using ""column_name"::numeric".
+4. Ensure the query is syntactically valid for PostgreSQL.
+
+Given the following query, return only the SQL query without any explanation or extra text:
+
+{query}`);
+
+// Create the LLM chain
+const chain = prompt.pipe(llm);
+
+export const generateSQL = async (query: string) => {
+  const response = await chain.invoke({ query });
+  console.log(extractSQL(response.content.toString()));
+
+  return extractSQL(response.content.toString());
+};

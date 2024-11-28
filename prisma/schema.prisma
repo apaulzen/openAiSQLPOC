@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum gender {
+  male
+  female
+  unisex
+}
+
+enum category {
+  Apparel
+  Footwear
+}
+
+model articles {
+  id                Int               @id @default(autoincrement())
+  productid         Int?
+  ean               String?
+  colorid           Int?
+  size              Int?
+  description       String?
+  originalprice     Decimal?          @db.Money
+  reducedprice      Decimal?          @db.Money
+  taxrate           Decimal?          @db.Decimal
+  discountinpercent Int?
+  currentlyactive   Boolean?
+  created           DateTime?         @default(now()) @db.Timestamptz(6)
+  updated           DateTime?         @db.Timestamptz(6)
+  colors            colors?           @relation(fields: [colorid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_positions   order_positions[]
+  stock             stock[]
+
+  @@index([productid])
+  @@index([colorid])
+  @@index([size])
+  @@index([created])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model colors {
+  id       Int        @id @default(autoincrement())
+  name     String?
+  rgb      String?
+  articles articles[]
+
+  @@index([name])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model customer {
+  id          Int       @id(map: "customer_pkey1") @default(autoincrement())
+  firstname   String?
+  lastname    String?
+  gender      gender?
+  email       String?
+  dateofbirth DateTime? @db.Date
+  address1    String?
+  address2    String?
+  city        String?
+  zip         String?
+  order       order[]
+  created     DateTime? @default(now()) @db.Timestamptz(6)
+  updated     DateTime? @db.Timestamptz(6)
+
+  @@index([email])
+  @@index([dateofbirth])
+  @@index([created])
+  @@index([updated])
+  @@index([gender])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order {
+  id                Int               @id @default(autoincrement())
+  customerId        Int?
+  ordertimestamp    DateTime?         @default(now()) @db.Timestamptz(6)
+  shippingaddressid Int?
+  total             Decimal?          @db.Money
+  shippingcost      Decimal?          @db.Money
+  created           DateTime?         @default(now()) @db.Timestamptz(6)
+  updated           DateTime?         @db.Timestamptz(6)
+  customer          customer?         @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_positions   order_positions[]
+
+  @@index([ordertimestamp])
+  @@index([total])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_positions {
+  id        Int       @id @default(autoincrement())
+  orderid   Int?
+  articleid Int?
+  amount    Int?      @db.SmallInt
+  price     Decimal?  @db.Money
+  created   DateTime? @default(now()) @db.Timestamptz(6)
+  updated   DateTime? @db.Timestamptz(6)
+  articles  articles? @relation(fields: [articleid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order     order?    @relation(fields: [orderid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([orderid])
+  @@index([articleid])
+  @@index([created])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sizes {
+  id       Int       @id @default(autoincrement())
+  gender   gender?
+  category category?
+  size     String?
+  size_us  Int?
+  size_uk  Int?
+  size_eu  Int?
+
+  @@index([size])
+  @@index([gender])
+  @@index([category])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stock {
+  id        Int       @id @default(autoincrement())
+  articleid Int?
+  count     Int?
+  created   DateTime? @default(now()) @db.Timestamptz(6)
+  updated   DateTime? @db.Timestamptz(6)
+  articles  articles? @relation(fields: [articleid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([articleid])
+  @@index([count])
+}

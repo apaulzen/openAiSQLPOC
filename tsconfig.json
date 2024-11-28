@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "commonjs", // Use commonjs for Node.js compatibility
+    "lib": ["ES2020"], // Include library files for ES2020
+    "outDir": "./dist", // Output directory for compiled files
+    "rootDir": "./src", // Root directory of input files
+    "strict": true, // Enable all strict type-checking options
+    "esModuleInterop": true, // Enable interop between CommonJS and ES modules
+    "skipLibCheck": true, // Skip type-checking of declaration files
+    "forceConsistentCasingInFileNames": true, // Ensure file name casing is consistent
+    "resolveJsonModule": true, // Allow importing JSON files
+    "noImplicitAny": true, // Raise errors for implicit `any` types
+    "moduleResolution": "node", // Use Node module resolution
+    "baseUrl": ".", // Set base directory for non-relative imports
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES6",
+    "paths": {
+      // Alias paths for cleaner imports
+      "@prisma/*": ["./node_modules/@prisma/*"]
+    }
+  },
+  "include": ["src"], // Files to include in the compilation
+  "exclude": ["node_modules", "dist", "seed.js"] // Files to exclude from compilation
+}
