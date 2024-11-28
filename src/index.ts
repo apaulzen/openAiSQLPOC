@@ -6,12 +6,14 @@ import * as dotenv from "dotenv";
 import { getCachedQuery, setCachedQuery } from "./cache";
 import { connectRedis } from "./redis";
 import json from "./util/json";
+import cors from "cors";
 dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
 
 app.use(express.json());
+app.use(cors());
 connectRedis();
 
 app.get("/", async (req: Request, res: Response) => {

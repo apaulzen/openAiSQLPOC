@@ -121,8 +121,8 @@ model order_positions {{
   order     order?    @relation(fields: [orderid], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([created])
-}
-}
+}}
+  
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model sizes {{
   id       Int       @id @default(autoincrement())
