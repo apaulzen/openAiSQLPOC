@@ -1,16 +1,10 @@
-import { ChatOpenAI, OpenAI } from "@langchain/openai";
 import { ChatPromptTemplate, PromptTemplate } from "@langchain/core/prompts";
 import * as dotenv from "dotenv";
 import { extractSQL } from "../util/extractSql";
+import llm from "../llm";
+import { prisma } from "../lib";
 
 dotenv.config();
-
-// Initialize OpenAI API client
-const llm = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  temperature: 1,
-  model: "gpt-4",
-});
 
 const prompt = ChatPromptTemplate.fromTemplate(`
   You are a helpful assistant and an analyst with high proficiency with postgresql that converts natural language into SQL queries for an e-commerce database. 
@@ -158,6 +152,7 @@ Follow these rules:
 3. Use explicit type casting where necessary. For example:
    - To compare a "money" column with a number, cast the "money" value to numeric using ""column_name"::numeric".
 4. Ensure the query is syntactically valid for PostgreSQL.
+5. If there is a question, query the database for all the tables you need and based on that that you are going to asnwer the question. So always query the database before answering the question.
 
 Given the following query, return only the SQL query without any explanation or extra text:
 
@@ -168,7 +163,34 @@ const chain = prompt.pipe(llm);
 
 export const generateSQL = async (query: string) => {
   const response = await chain.invoke({ query });
-  console.log(extractSQL(response.content.toString()));
+  const sqlQuery = extractSQL(response.content.toString());
 
-  return extractSQL(response.content.toString());
+  console.log("LLM Response:", sqlQuery);
+
+  try {
+    const result = await prisma.$queryRawUnsafe(sqlQuery);
+
+    const response = await llm.invoke(
+      `
+      Given the following user question, corresponding SQL query, and SQL result, answer the user question.
+   
+     Question: {question}
+     SQL Query: {query}
+     SQL Result: {result}
+     Answer: 
+     `
+        .replace("{question}", query)
+        .replace("{query}", sqlQuery)
+        .replace(
+          "{result}",
+          JSON.stringify(result, (key, value) => (typeof value === "bigint" ? Number(value) : value))
+        )
+    );
+
+    console.log("LLM Response2:", response.content);
+
+    return response.content.toString();
+  } catch (error) {
+    return response.content.toString();
+  }
 };

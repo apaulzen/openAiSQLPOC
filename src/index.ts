@@ -1,12 +1,17 @@
 import express, { Application, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { generateSQL } from "./services/openai";
+// import { generateSQL } from "./util/generateSql";
 import { createClient } from "redis";
 import * as dotenv from "dotenv";
 import { getCachedQuery, setCachedQuery } from "./cache";
 import { connectRedis } from "./redis";
 import json from "./util/json";
 import cors from "cors";
+import { extractSQL } from "./util/extractSql";
+import { generateSQL } from "./services/openai";
+import { generateSQLWithAgent } from "./util/generateSql";
+import { contextAwareQnA, initDatabase } from "./services/openai2";
+// import { contextAwareQnA, initDatabase } from "./services/openai2";
 dotenv.config();
 
 const app = express();
@@ -24,28 +29,22 @@ app.get("/", async (req: Request, res: Response) => {
 app.post("/query", async (req: Request, res: Response) => {
   const { query } = req.body;
 
+  await initDatabase();
+
   if (!query) {
     res.status(400).send({ error: "Query is required" });
   }
 
   try {
-    // Generate SQL from NLQ
-    const sql = (await generateSQL(query)) as string;
+    // Generate response from LLM
+    console.log("here");
 
-    // Check Redis cache for result
-    const cachedResult = await getCachedQuery(sql);
-    if (cachedResult) {
-      res.send({ cached: true, data: JSON.parse(cachedResult) });
-    }
+    const llmResponse = await contextAwareQnA(query);
 
-    // Execute SQL query using Prisma
-    const result = await prisma.$queryRawUnsafe(sql);
-    // console.log(result);
+    // Check if the LLM response contains a valid SQL query
 
-    // Cache the result
-    await setCachedQuery(sql, result);
-
-    res.send(JSON.stringify(result, (key, value) => (typeof value === "bigint" ? Number(value) : value)));
+    // If no SQL query is returned, treat the LLM response as a direct answer
+    res.send({ answer: llmResponse });
   } catch (error: any) {
     console.error(error);
     res.status(500).send({ error: error.message });

@@ -17,7 +17,8 @@
     "target": "ES6",
     "paths": {
       // Alias paths for cleaner imports
-      "@prisma/*": ["./node_modules/@prisma/*"]
+      "@prisma/*": ["./node_modules/@prisma/*"],
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src"], // Files to include in the compilation
