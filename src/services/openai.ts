@@ -170,26 +170,26 @@ export const generateSQL = async (query: string) => {
   try {
     const result = await prisma.$queryRawUnsafe(sqlQuery);
 
-    const response = await llm.invoke(
-      `
-      Given the following user question, corresponding SQL query, and SQL result, answer the user question.
-   
-     Question: {question}
-     SQL Query: {query}
-     SQL Result: {result}
-     Answer: 
-     `
-        .replace("{question}", query)
-        .replace("{query}", sqlQuery)
-        .replace(
-          "{result}",
-          JSON.stringify(result, (key, value) => (typeof value === "bigint" ? Number(value) : value))
-        )
-    );
+    // const response = await llm.invoke(
+    //   `
+    //   Given the following user question, corresponding SQL query, and SQL result, answer the user question.
 
-    console.log("LLM Response2:", response.content);
+    //  Question: {question}
+    //  SQL Query: {query}
+    //  SQL Result: {result}
+    //  Answer:
+    //  `
+    //     .replace("{question}", query)
+    //     .replace("{query}", sqlQuery)
+    //     .replace(
+    //       "{result}",
+    //       JSON.stringify(result, (key, value) => (typeof value === "bigint" ? Number(value) : value))
+    //     )
+    // );
 
-    return response.content.toString();
+    // console.log("LLM Response2:", response.content);
+
+    return result;
   } catch (error) {
     return response.content.toString();
   }

@@ -10,7 +10,8 @@ import cors from "cors";
 import { extractSQL } from "./util/extractSql";
 import { generateSQL } from "./services/openai";
 import { generateSQLWithAgent } from "./util/generateSql";
-import { contextAwareQnA, initDatabase } from "./services/openai2";
+import { getSystemPrompt, initDatabase } from "./services/openaiLargeDatabase";
+// import { contextAwareQnA, initDatabase } from "./services/openaiSmallDb";
 // import { contextAwareQnA, initDatabase } from "./services/openai2";
 dotenv.config();
 
@@ -29,7 +30,9 @@ app.get("/", async (req: Request, res: Response) => {
 app.post("/query", async (req: Request, res: Response) => {
   const { query } = req.body;
 
-  await initDatabase();
+  try {
+    await initDatabase();
+  } catch (e) {}
 
   if (!query) {
     res.status(400).send({ error: "Query is required" });
@@ -39,7 +42,7 @@ app.post("/query", async (req: Request, res: Response) => {
     // Generate response from LLM
     console.log("here");
 
-    const llmResponse = await contextAwareQnA(query);
+    const llmResponse = await getSystemPrompt(query);
 
     // Check if the LLM response contains a valid SQL query
 
