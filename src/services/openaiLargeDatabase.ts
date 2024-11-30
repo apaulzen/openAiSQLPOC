@@ -25,18 +25,21 @@ const Table = z.object({
   names: z.array(z.string()).describe("Names of tables in SQL database"),
 });
 
+const historyPrompt: any[] = [];
 export const getSystemPrompt = async (question: string) => {
   const executeQuery = new QuerySqlTool(db);
   const tableNames = db.allTables.map((t) => t.tableName).join("\n");
-
+  // to do add limit: Limit fetched data to maximum 10 rows.
   const queryPrompt = PromptTemplate.fromTemplate(`
-    Limit fetched data to maximum 10 rows. Make sure to always return names of user village and other entities. ALWAYS OMIT \"imagebase64\" COLUMN FROM SELECT STATEMENTS.
+    Make sure to always return names of user village and other entities. ALWAYS OMIT \"imagebase64\" COLUMN FROM SELECT STATEMENTS. ALWAYS OMIT \"relationship_json\" COLUMN FROM SELECT STATEMENTS. 
     {input}.
+    If the query contains the words "COUNT", "Number of", or any other indication of aggregation (e.g., "total", "how many", "counting"), always generate a SQL query that returns a count of the relevant rows or entities.
     The top_k is set to {top_k}.
     the table info is {table_info}.
     the table names are {table_names}.
     The tables to query are {table_names_to_query}.
-    `);
+    This is the database schema : The generator is set to "prisma-client-js" and the datasource is a PostgreSQL database with the URL from the environment variable "DATABASE_URL". The enum gender includes "male", "female", and "unisex", while the enum category includes "Apparel" and "Footwear". The model articles has fields such as id (Int), productid (Int?), ean (String?), colorid (Int?), size (Int?), description (String?), originalprice (Decimal?), reducedprice (Decimal?), taxrate (Decimal?), discountinpercent (Int?), currentlyactive (Boolean?), created (DateTime?), and updated (DateTime?). It also has relations: colors (optional, referencing colorid to colors.id), order_positions (referencing id to articleid in order_positions), and stock (referencing id to articleid in stock). The model colors includes fields id (Int), name (String?), and rgb (String?) with a relation to articles (referencing id to colorid in articles). The model customer contains id (Int), firstname (String?), lastname (String?), gender (gender?), email (String?), dateofbirth (DateTime?), address1 (String?), address2 (String?), city (String?), zip (String?), created (DateTime?), and updated (DateTime?) with a relation to order (referencing id to customerId in order). The model order has id (Int), customerId (Int?), ordertimestamp (DateTime?), total (Decimal?), shippingcost (Decimal?), created (DateTime?), and updated (DateTime?) with relations to customer (referencing customerId to customer.id) and order_positions (referencing id to orderid in order_positions). The model order_positions includes id (Int), orderid (Int?), articleid (Int?), amount (Int?), price (Decimal?), created (DateTime?), and updated (DateTime?) with relations to articles (referencing articleid to articles.id) and order (referencing orderid to order.id). The model sizes includes id (Int), gender (gender?), category (category?), size (String?), size_us (Int?), size_uk (Int?), and size_eu (Int?). The model stock includes id (Int), articleid (Int?), count (Int?), created (DateTime?), and updated (DateTime?) with a relation to articles (referencing articleid to articles.id).
+    `); 
 
   const prompt2 = ChatPromptTemplate.fromMessages([
     [
@@ -79,7 +82,7 @@ export const getSystemPrompt = async (question: string) => {
       table_names_to_query: input.tableNamesToUse,
     });
   });
-  const historyPrompt: any[] = [];
+  
 
   const answerPrompt = PromptTemplate.fromTemplate(
     `
