@@ -198,6 +198,10 @@ export const getSystemPrompt = async (question: string) => {
 
   historyPrompt.push(result);
 
+  if (historyPrompt.length > 15) {
+    historyPrompt.shift();
+  }
+
   // Log the history size after updating
   console.log("Updated historyPrompt size:", historyPrompt.length);
   console.log("Updated historyPrompt:", historyPrompt);
