@@ -40,7 +40,7 @@ export const getSystemPrompt = async (question: string) => {
     {input}.
     If the query contains the words "COUNT", "Number of", or any other indication of aggregation (e.g., "total", "how many", "counting"), always generate a SQL query that returns a count of the relevant rows or entities.
     Put the column names in quote in the query. Add query to Fetch description from refereced table if not available.
-    For any query, that will return id perform the necessary joins to fetch the name (i.e. for user user_id -> user name  etc), 
+    For any query, that will return id perform the necessary joins to fetch the name (i.e. for user user_id -> user name  etc, village id to village names, node id to node name etc), 
 
     If the query includes GROUP BY, ensure that all non-aggregated fields are listed in the GROUP BY clause. 
     Do not search for people or user in auth_user table.
@@ -65,7 +65,7 @@ export const getSystemPrompt = async (question: string) => {
     desc: people/residents details
 
     model: UserRelations -> user_id (String), relative_id (String), relation (Relation), reverse_relation (Relation), relation_type (RelationCategory?), updated_at (DateTime?), relations: user (relation to UserInfo with fields: [user_id], references: [user_id], onDelete: Cascade), relative (relation to UserInfo with fields: [relative_id], references: [user_id], onDelete: Cascade).
-    desc: user_id and relative_id are similar, look at both field when searching for relation or related peoples
+    desc: this table stores relations between people, user_id and relative_id are similar, look at both field when searching for relation or related peoples
 
     model: village_details -> id (String), village_id (String, unique), v_name (String?), v_pincode (String?), v_code (String?), v_district (String?), v_state (String?), v_lat (Float?), v_long (Float?), relations: nodeDetails (relation to NodeDetails), users (relation to UserInfo), villageEntryExits (relation to VillageEntryExit).
 
@@ -187,7 +187,15 @@ export const getSystemPrompt = async (question: string) => {
   ]);
 
   const mdresponse = (await finalChain.invoke({ question: question }));
-  let result = JSON.parse(mdresponse.replace("```json", "").replace("```", ""));
+  console.log("finalChain", mdresponse);
+
+  let result = JSON.parse(
+    mdresponse
+      .replace(/^```json/, "")  // Remove the starting "```json"
+      .replace(/```$/, "")      // Remove the ending "```"
+      .trim()                   // Remove any extra spaces or newlines
+  );
+  
   mdresponse.replace("```json", "");
 
   console.log("Final response:", result);
