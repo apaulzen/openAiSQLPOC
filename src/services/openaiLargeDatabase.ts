@@ -40,7 +40,8 @@ export const getSystemPrompt = async (question: string) => {
     {input}.
     If the query contains the words "COUNT", "Number of", or any other indication of aggregation (e.g., "total", "how many", "counting"), always generate a SQL query that returns a count of the relevant rows or entities.
     Put the column names in quote in the query. Add query to Fetch description from refereced table if not available.
-    For every query, perform the necessary joins to fetch the name (user name, village name, node name etc), 
+    For any query, that will return id perform the necessary joins to fetch the name (i.e. for user user_id -> user name  etc), 
+
     If the query includes GROUP BY, ensure that all non-aggregated fields are listed in the GROUP BY clause. 
     Do not search for people or user in auth_user table.
 
@@ -71,16 +72,8 @@ export const getSystemPrompt = async (question: string) => {
     model: village_entry_exit -> id (String), reason (String?), entry_or_exit_at (DateTime), entry_or_exit (String?), user_id (String), village_id (String), node_id (String), imagebase64 (Bytes?), category (String?), category_remarks (String?), vehicle_type (String?), vehicle_number (String?), vehicle_make_model (String?), vehicle_remarks (String?), purpose_of_visit (String?), remarks1 (String?), remarks2 (String?), remarks3 (String?), remarks4 (String?), remarks (Json?), relations: userInfo (relation to UserInfo with fields: [user_id], references: [user_id]), village (relation to VillageDetails with fields: [village_id], references: [village_id]), nodeDetails (relation to NodeDetails with fields: [node_id], references: [node_id]).
     desc: it stores when people enters or exits from the nodes of a village, also refered as a transaction, 
     
-
-    model: user_fingerprints -> id (String), user_id (String, unique), fingerprints (String[]), bitmap (String?), iso (String?), relations: userInfo (relation to UserInfo with fields: [user_id], references: [user_id]).
-
-    model: deletedUser -> deletedUserId (String, id), reason (String), reconciledUserId (String?), createdAt (DateTime, default now()).
-    desc: It stores deleted user data and the reason it was deleted
-
     model: cdr_data -> id (String, default uuid), record_id (String, unique), calling (BigInt?), called (BigInt?), duration (Float?), date_time (String?), call_type (String?), cell_tower1 (String?), cell_tower2 (Float?), imei (BigInt?), imsi (String?), smsc (String?), network (String?).
     desc: call records data
-
-    model: user_credentials -> username (String, id, unique), password (String), passwordPlain (String), authUserId (String?), reason (String?), relations: authUser (relation to AuthUsers with fields: [authUserId], references: [id]).
 
     enum: AnomalyType -> LOCATION_CHANGES_CDR, ABNORMAL_DURATION_CDR, ABNORMAL_CALL_FREQUENCY_CDR, UNUSUAL_CALL_TIMINGS_CDR, TOO_MANY_DEVICE_CDR, CONTACTED_CRIMINALS_CDR, DUPLICATE_AADHAAR, VEHICLE_DETAILS_DEVIATION, SUSPICIOUS_CONNECTION, WANTED_DETECTED, SUSPECT_DETECTED
 
@@ -100,7 +93,8 @@ export const getSystemPrompt = async (question: string) => {
 
 //    model: auth_users -> id (String, default uuid), name (String), email (String), relations: userCredentials (relation to UserCredentials).
 // desc: auth_users are admin users, when searching for any person or user, always look into user_info first, check auth_user only if admin mentioned explicitly in user query
-    
+    //     For any query, that will return id perform the necessary joins to fetch the name (i.e. for user user_id -> user name  etc), 
+
 
   const queryChain = await createSqlQueryChain({
     llm,
@@ -211,4 +205,9 @@ export const getSystemPrompt = async (question: string) => {
   console.log("Updated historyPrompt:", historyPrompt);
 
   return response;
+};
+
+export const clearMemory = () => {
+  historyPrompt.length = 0;
+  console.log("Cleared memory: ", historyPrompt);
 };

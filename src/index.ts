@@ -12,7 +12,7 @@ import cors from "cors";
 import { extractSQL } from "./util/extractSql";
 import { generateSQL } from "./services/openai";
 import { generateSQLWithAgent } from "./util/generateSql";
-import { getSystemPrompt, initDatabase } from "./services/openaiLargeDatabase";
+import { getSystemPrompt, initDatabase, clearMemory } from "./services/openaiLargeDatabase";
 // import { contextAwareQnA, initDatabase } from "./services/openaiSmallDb";
 // import { contextAwareQnA, initDatabase } from "./services/openai2";
 dotenv.config();
@@ -36,6 +36,11 @@ app.get('/', (req, res) => {
 });
 
 // API route to handle NLQ
+app.get("/clear", async (req: Request, res: Response) => {
+  clearMemory();
+  res.send("OK");
+});
+
 app.post("/query", async (req: Request, res: Response) => {
   const { query } = req.body;
 
