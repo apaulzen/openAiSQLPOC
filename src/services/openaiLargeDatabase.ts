@@ -40,7 +40,8 @@ export const getSystemPrompt = async (question: string) => {
     {input}.
     If the query contains the words "COUNT", "Number of", or any other indication of aggregation (e.g., "total", "how many", "counting"), always generate a SQL query that returns a count of the relevant rows or entities.
     Put the column names in quote in the query. Add query to Fetch description from refereced table if not available.
-     The top_k is set to {top_k}.
+    Add user-friendly columns if id available, i.e. fetch name from user_id, village name from village_id etc.
+    The top_k is set to {top_k}.
     the table info is {table_info}. {table_names}. {table_names_to_query}.
 
     table schema is:
@@ -78,9 +79,6 @@ export const getSystemPrompt = async (question: string) => {
 
     model: user_credentials -> username (String, id, unique), password (String), passwordPlain (String), authUserId (String?), reason (String?), relations: authUser (relation to AuthUsers with fields: [authUserId], references: [id]).
 
-    model: auth_users -> id (String, default uuid), name (String), email (String), relations: userCredentials (relation to UserCredentials).
-    desd: auth_users are admin users, when searching for any person or user, always look into user_info first, check auth_user only if admin mentioned explicitly in user query
-    
     enum: AnomalyType -> LOCATION_CHANGES_CDR, ABNORMAL_DURATION_CDR, ABNORMAL_CALL_FREQUENCY_CDR, UNUSUAL_CALL_TIMINGS_CDR, TOO_MANY_DEVICE_CDR, CONTACTED_CRIMINALS_CDR, DUPLICATE_AADHAAR, VEHICLE_DETAILS_DEVIATION, SUSPICIOUS_CONNECTION, WANTED_DETECTED, SUSPECT_DETECTED
 
     enum: AlertType -> CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL
@@ -97,6 +95,9 @@ export const getSystemPrompt = async (question: string) => {
     desc: This table stores when data is exported or imported and the time it was synced.
   `);
 
+//    model: auth_users -> id (String, default uuid), name (String), email (String), relations: userCredentials (relation to UserCredentials).
+// desc: auth_users are admin users, when searching for any person or user, always look into user_info first, check auth_user only if admin mentioned explicitly in user query
+    
 
   const queryChain = await createSqlQueryChain({
     llm,

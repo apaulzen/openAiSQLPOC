@@ -1,7 +1,9 @@
 import express, { Application, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 // import { generateSQL } from "./util/generateSql";
+const path = require('path');
 import { createClient } from "redis";
+
 import * as dotenv from "dotenv";
 import { getCachedQuery, setCachedQuery } from "./cache";
 import { connectRedis } from "./redis";
@@ -22,8 +24,15 @@ app.use(express.json());
 app.use(cors());
 connectRedis();
 
-app.get("/", async (req: Request, res: Response) => {
-  res.send("Hello World!");
+// app.get("/", async (req: Request, res: Response) => {
+//   res.send("Hello World!");
+// });
+
+// Serve static files from the 'dist' folder
+app.use(express.static(path.join(__dirname, '../dist')));
+// Default route to serve the index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // API route to handle NLQ
@@ -32,7 +41,9 @@ app.post("/query", async (req: Request, res: Response) => {
 
   try {
     await initDatabase();
-  } catch (e) {}
+  } catch (e) {
+    console.log(e);
+  }
 
   if (!query) {
     res.status(400).send({ error: "Query is required" });
