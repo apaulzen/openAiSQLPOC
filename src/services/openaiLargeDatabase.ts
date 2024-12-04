@@ -40,7 +40,10 @@ export const getSystemPrompt = async (question: string) => {
     {input}.
     If the query contains the words "COUNT", "Number of", or any other indication of aggregation (e.g., "total", "how many", "counting"), always generate a SQL query that returns a count of the relevant rows or entities.
     Put the column names in quote in the query. Add query to Fetch description from refereced table if not available.
-    Add user-friendly columns if id available, i.e. fetch name from user_id, village name from village_id etc.
+    For every query, perform the necessary joins to fetch the name (user name, village name, node name etc), 
+    If the query includes GROUP BY, ensure that all non-aggregated fields are listed in the GROUP BY clause. 
+    Do not search for people or user in auth_user table.
+
     The top_k is set to {top_k}.
     the table info is {table_info}. {table_names}. {table_names_to_query}.
 
